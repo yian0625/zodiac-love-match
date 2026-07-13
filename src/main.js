@@ -20,7 +20,6 @@ const screenLayout = (content, screen) => `
   <main class="app-shell screen-${screen}">
     <header class="site-header">
       <button class="wordmark" type="button" data-action="home" aria-label="回到首页">Match Atlas</button>
-      <p class="header-note">只在此浏览器中完成</p>
     </header>
     ${content}
   </main>
