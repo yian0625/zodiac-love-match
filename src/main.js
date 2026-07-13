@@ -43,7 +43,19 @@ function renderPicker({ field, label, helper, items, formatter }) {
         <span id="${field}-value">${selected ? `${selected.name} - ${formatter(selected)}` : `请选择${label.replace('你的', '')}`}</span>
         <span class="select-chevron" aria-hidden="true"></span>
       </button>
-      ${isOpen ? `<div class="select-menu" id="${menuId}" role="group" aria-labelledby="${field}-label">${optionRows}</div>` : ''}
+      ${isOpen ? `
+        <button class="picker-scrim" type="button" data-action="close-picker" aria-label="关闭${label}选择器"></button>
+        <section class="select-sheet" id="${menuId}" role="dialog" aria-modal="true" aria-labelledby="${field}-sheet-title">
+          <header class="select-sheet-header">
+            <div>
+              <p>选择资料</p>
+              <h2 id="${field}-sheet-title">${label}</h2>
+            </div>
+            <button class="sheet-close" type="button" data-action="close-picker">完成</button>
+          </header>
+          <div class="select-options" role="group" aria-label="${label}选项">${optionRows}</div>
+        </section>
+      ` : ''}
       <small>${helper}</small>
     </div>
   `;
@@ -286,6 +298,12 @@ app.addEventListener('click', (event) => {
 
   if (action === 'toggle-picker') {
     state.openPicker = state.openPicker === button.dataset.field ? null : button.dataset.field;
+    render();
+    return;
+  }
+
+  if (action === 'close-picker') {
+    state.openPicker = null;
     render();
     return;
   }
