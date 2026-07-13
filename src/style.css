@@ -418,7 +418,10 @@ button:focus-visible {
 .analysis-steps { display: grid; width: 100%; margin: 31px 0 4px; padding: 0; list-style: none; }
 .analysis-steps li { padding: 12px 0; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 0.88rem; }
 .analysis-steps li.is-done, .analysis-steps li.is-active { color: var(--text); font-weight: 740; }
+.analysis-steps li.is-done::before { margin-right: 9px; color: var(--accent); content: '✓'; }
 .analysis-steps li.is-active::before { display: inline-block; width: 7px; height: 7px; margin-right: 9px; border-radius: 50%; background: var(--accent); content: ''; }
+.analysis-dimensions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 19px 0 0; padding: 0; list-style: none; }
+.analysis-dimensions li { padding: 9px 10px; border: 1px solid var(--line); border-radius: 10px; background: rgb(255 255 255 / 60%); color: var(--text); font-size: 0.75rem; font-weight: 700; }
 
 .result-intro h1 { font-size: clamp(2.25rem, 9vw, 3rem); }
 .result-intro > p:not(.eyebrow) { margin: 20px 0 0; color: var(--muted); font-size: 0.95rem; line-height: 1.75; }
@@ -565,4 +568,11 @@ button:focus-visible {
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+
+@media (max-width: 360px) {
+  .progress-rail { gap: 3px; }
+  .map-visual { min-height: 195px; }
+  .map-axis { width: clamp(45px, calc(var(--weight) * 1px), 72px); }
+  .map-axis small { font-size: 0.55rem; }
 }

@@ -32,8 +32,50 @@ export const mbtiTypes = [
   ['esfp', 'ESFP', '外向 · 实感 · 情感 · 感知']
 ].map(([id, name, dimensions]) => ({ id, name, dimensions }));
 
-const relationshipMapClue = (category) =>
-  `关系地图线索：在「${category}」这件事里，什么会让你感觉彼此正在好好相处？`;
+const categoryClues = {
+  '发生误会': '这一题在帮你辨认：被误解时，你需要怎样重新靠近。',
+  '日常联系': '这一题在帮你辨认：什么样的联系，会让你感到安心而不是被催促。',
+  '冲突时刻': '这一题在帮你辨认：有分歧时，哪一种回应能让你继续说下去。',
+  '相处节奏': '这一题在帮你辨认：关系怎样靠近，才不会让你失去自己的节奏。',
+  '约会计划': '这一题在帮你辨认：期待相处时，你更在乎自由还是确定感。',
+  '表达在乎': '这一题在帮你辨认：状态不好时，怎样的支持最能接住你。',
+  '社交边界': '这一题在帮你辨认：安全感对你来说，更多来自信任还是约定。',
+  '重要决定': '这一题在帮你辨认：面对共同决定时，你想先被怎样对待。',
+  '亲密距离': '这一题在帮你辨认：不见面时，什么能让连接感依然存在。',
+  '修复关系': '这一题在帮你辨认：争执之后，什么会让你愿意重新靠近。',
+  '生活习惯': '这一题在帮你辨认：计划被打乱时，怎样才能让你安心。',
+  '关系期待': '这一题在帮你辨认：长期相处里，哪一种需要最不能被忽略。',
+  '被误解时': '这一题在帮你辨认：你更想立刻澄清，还是先照顾彼此的感受。',
+  '分享生活': '这一题在帮你辨认：意外发生时，你希望两个人怎样站在一起。',
+  '亲密表达': '这一题在帮你辨认：心意和真实偏好不一致时，怎样交流最舒服。',
+  '独处时间': '这一题在帮你辨认：需要空间时，你希望对方怎样理解你的沉默。',
+  '共同成长': '这一题在帮你辨认：面对未来差异时，你更需要理解还是方案。',
+  '承诺感': '这一题在帮你辨认：什么样的日常细节，会让你真正相信一段关系。',
+  '化解尴尬': '这一题在帮你辨认：不舒服的小事出现后，你希望怎样被修复。',
+  '爱的语言': '这一题在帮你辨认：哪一种细小的行动，最容易让你感到被爱。',
+  '第一次约会': '这一题在帮你辨认：刚认识时，你期待关系以怎样的速度展开。',
+  '回复消息': '这一题在帮你辨认：忙碌时，你希望怎样维持彼此的安心感。',
+  '暧昧边界': '这一题在帮你辨认：关系未定义时，什么样的边界能让你自在。',
+  '临时爽约': '这一题在帮你辨认：失落出现时，哪一个细节会让你觉得被重视。',
+  '异地相处': '这一题在帮你辨认：距离拉开后，什么最能让你们保持连接。',
+  '认识朋友': '这一题在帮你辨认：进入对方生活时，你需要怎样的照顾和准备。',
+  '纪念日': '这一题在帮你辨认：重要时刻被忽略后，什么能让你愿意再相信。',
+  '前任话题': '这一题在帮你辨认：谈起过去时，什么样的坦诚会让你安心。',
+  '社交媒体': '这一题在帮你辨认：公开和私下的在意，对你分别意味着什么。',
+  '工作变动': '这一题在帮你辨认：现实变化发生时，你希望先确认什么。',
+  '金钱观念': '这一题在帮你辨认：不同消费习惯下，怎样协商会让你放松。',
+  '私人边界': '这一题在帮你辨认：说出拒绝时，你最需要被怎样尊重。',
+  '共同生活': '这一题在帮你辨认：生活越来越靠近时，什么规则能让你自在。',
+  '意见分歧': '这一题在帮你辨认：观点不同的时候，什么能让对话不伤人。',
+  '线上约会': '这一题在帮你辨认：初次见面的安全感，需要怎样被认真安排。',
+  '未来规划': '这一题在帮你辨认：谈到下一步时，你想如何保留选择和确定。',
+  '爱好差异': '这一题在帮你辨认：个人热爱和陪伴时间，怎样平衡最舒服。',
+  '道歉之后': '这一题在帮你辨认：听见道歉后，你还需要怎样的行动来安心。',
+  '低落情绪': '这一题在帮你辨认：情绪低落时，陪伴和空间怎样才恰到好处。',
+  '生病时': '这一题在帮你辨认：脆弱的时候，怎样的照顾最能让你放松。',
+  '亲密边界': '这一题在帮你辨认：身体与亲密的界限，怎样被尊重才会安心。',
+  '家庭相处': '这一题在帮你辨认：进入彼此家庭时，怎样的支持会让你有底气。'
+};
 
 const quizKeyMoments = {
   12: {
@@ -48,8 +90,13 @@ const quizKeyMoments = {
   }
 };
 
-export function getKeyMoment(total, index) {
-  return quizKeyMoments[total]?.[index] ?? null;
+const analysisStepLabels = ['收集你的场景选择', '整理四种关系需要', '准备你的相处建议'];
+
+export function getAnalysisSteps(stage) {
+  return analysisStepLabels.map((label, index) => ({
+    label,
+    status: index < stage ? 'done' : index === stage ? 'active' : 'upcoming'
+  }));
 }
 
 const questions = [
@@ -476,15 +523,19 @@ const questions = [
 ].map((question, index) => ({
   id: index + 1,
   ...question,
-  clue: relationshipMapClue(question.category),
+  clue: categoryClues[question.category],
   choices: question.choices.map(([label, value]) => ({ label, value }))
 }));
 
 export function getQuestions(count, random = Math.random) {
+  const questionCount = count === 20 ? 20 : 12;
   const shuffled = [...questions];
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
     const swapIndex = Math.floor(random() * (index + 1));
     [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
   }
-  return shuffled.slice(0, count === 20 ? 20 : 12);
+  return shuffled.slice(0, questionCount).map((question, index) => ({
+    ...question,
+    keyMoment: quizKeyMoments[questionCount]?.[index] ?? null
+  }));
 }

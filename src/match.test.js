@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getKeyMoment, getQuestions, mbtiTypes, zodiacs } from './quiz.js';
+import { getAnalysisSteps, getQuestions, mbtiTypes, zodiacs } from './quiz.js';
 import { analyzeRelationshipMap, buildResult, scoreAnswers } from './match.js';
 
 describe('quiz reference data', () => {
@@ -19,13 +19,26 @@ describe('quiz reference data', () => {
     const questions = getQuestions(20, () => 0);
 
     expect(questions.every((question) => question.clue)).toBe(true);
-    expect(questions.every((question) => question.clue.includes(question.category))).toBe(true);
+    expect(new Set(questions.map((question) => question.clue)).size).toBeGreaterThan(12);
+    expect(questions.find((question) => question.category === '日常联系').clue)
+      .toBe('这一题在帮你辨认：什么样的联系，会让你感到安心而不是被催促。');
   });
 
   it('marks meaningful progress moments for both quiz lengths', () => {
-    expect(getKeyMoment(12, 3)).toContain('关键分岔');
-    expect(getKeyMoment(12, 4)).toBeNull();
-    expect(getKeyMoment(20, 11)).toContain('关系地图');
+    const quickQuestions = getQuestions(12, () => 0);
+    const fullQuestions = getQuestions(20, () => 0);
+
+    expect(quickQuestions[3].keyMoment).toContain('关键分岔');
+    expect(quickQuestions[4].keyMoment).toBeNull();
+    expect(fullQuestions[11].keyMoment).toContain('关系地图');
+  });
+
+  it('advances analysis copy through three complete, accessible stages', () => {
+    expect(getAnalysisSteps(1)).toEqual([
+      { label: '收集你的场景选择', status: 'done' },
+      { label: '整理四种关系需要', status: 'active' },
+      { label: '准备你的相处建议', status: 'upcoming' }
+    ]);
   });
 
   it('uses established zodiac date ranges and all MBTI types', () => {
@@ -100,6 +113,11 @@ describe('relationship-preference scoring', () => {
 
   it('does not infer a tension from an unanswered secondary need', () => {
     expect(analyzeRelationshipMap(Array(12).fill('direct')).tension).toBeNull();
+  });
+
+  it('does not infer a tension when every relationship need is tied', () => {
+    expect(analyzeRelationshipMap(['direct', 'reassurance', 'independent', 'reliable']).tension)
+      .toBeNull();
   });
 
   it('unlocks a practice only on the 20-question path', () => {

@@ -184,7 +184,7 @@ function classifyMap(scores, preferences) {
 }
 
 function findTension(scores, preferences) {
-  if (scores[preferences[1]] === 0) return null;
+  if (scores[preferences[1]] === 0 || scores[preferences[1]] === scores[preferences[2]]) return null;
 
   const pair = [preferences[0], preferences[1]].sort().join('-');
   const tensionId = {

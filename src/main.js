@@ -1,5 +1,5 @@
 import './style.css';
-import { getKeyMoment, getQuestions, mbtiTypes, zodiacs } from './quiz.js';
+import { getAnalysisSteps, getQuestions, mbtiTypes, zodiacs } from './quiz.js';
 import { buildResult } from './match.js';
 
 const app = document.querySelector('#app');
@@ -13,7 +13,8 @@ const state = {
   validationError: '',
   result: null,
   questions: [],
-  openPicker: null
+  openPicker: null,
+  analysisStep: 0
 };
 
 const screenLayout = (content, screen) => `
@@ -44,13 +45,12 @@ function renderProgressRail(total, current) {
   return `<ol class="progress-rail" style="--count:${total}" aria-label="答题进度">${items}</ol>`;
 }
 
-function renderMapClue(question, index, total) {
-  const keyMoment = getKeyMoment(total, index);
+function renderMapClue(question, index) {
   return `
     <aside class="map-clue">
       <span>关系地图线索 ${index + 1}</span>
       <p>${question.clue}</p>
-      ${keyMoment ? `<p class="key-moment">${keyMoment}</p>` : ''}
+      ${question.keyMoment ? `<p class="key-moment">${question.keyMoment}</p>` : ''}
     </aside>
   `;
 }
@@ -210,7 +210,7 @@ function renderQuiz() {
       </div>
       ${renderProgressRail(questions.length, state.questionIndex)}
       <div class="question-area">
-        ${renderMapClue(question, state.questionIndex, questions.length)}
+        ${renderMapClue(question, state.questionIndex)}
         <h1>${question.prompt}</h1>
         <div class="choice-list" role="radiogroup" aria-label="${question.prompt}">
           ${question.choices.map((choice, index) => `
@@ -230,16 +230,26 @@ function renderQuiz() {
 }
 
 function renderAnalyzing() {
+  const steps = getAnalysisSteps(state.analysisStep)
+    .map((step) => `<li class="is-${step.status}">${step.label}</li>`)
+    .join('');
+  const stageCopy = [
+    '先把你刚才的真实选择收拢成线索。',
+    '正在对照坦诚沟通、情绪回应、独立空间和稳定行动。',
+    '马上带你看看这张关系地图想告诉你的事。'
+  ][state.analysisStep];
+
   return screenLayout(`
     <section class="analysis-screen" aria-live="polite">
       <p class="eyebrow">YOUR RELATIONSHIP MAP</p>
       <h1>正在绘制你的<br />相处地图。</h1>
-      <ol class="analysis-steps">
-        <li class="is-done">收集你的场景选择</li>
-        <li class="is-active">整理四种关系需要</li>
-        <li>准备你的相处建议</li>
-      </ol>
-      <p>每一种选择都只是你的一个线索，不是给你贴标签。</p>
+      <ol class="analysis-steps">${steps}</ol>
+      ${state.analysisStep > 0 ? `
+        <ul class="analysis-dimensions" aria-label="正在整理的关系需要">
+          <li>坦诚沟通</li><li>情绪回应</li><li>独立空间</li><li>稳定行动</li>
+        </ul>
+      ` : ''}
+      <p>${stageCopy}</p>
     </section>
   `, 'analyzing');
 }
@@ -321,7 +331,7 @@ function renderResult() {
     <section class="result-screen">
       <div class="result-intro">
         <p class="eyebrow">YOUR RELATIONSHIP MAP</p>
-        <h1>${result.headline}</h1>
+        <h1 tabindex="-1">${result.headline}</h1>
         <p>${result.summary}</p>
         <div class="preference-tags">${preferenceTags}</div>
       </div>
@@ -423,15 +433,28 @@ function resetState() {
   state.result = null;
   state.questions = [];
   state.openPicker = null;
+  state.analysisStep = 0;
 }
 
 function finishQuiz() {
   state.screen = 'analyzing';
+  state.analysisStep = 0;
   render();
+  window.setTimeout(() => {
+    if (state.screen !== 'analyzing') return;
+    state.analysisStep = 1;
+    render();
+  }, 230);
+  window.setTimeout(() => {
+    if (state.screen !== 'analyzing') return;
+    state.analysisStep = 2;
+    render();
+  }, 470);
   window.setTimeout(() => {
     state.result = buildResult(state.profile, state.answers);
     state.screen = 'result';
     render();
+    window.requestAnimationFrame(() => document.querySelector('.result-intro h1')?.focus());
   }, 720);
 }
 
