@@ -451,6 +451,7 @@ function finishQuiz() {
     render();
   }, 470);
   window.setTimeout(() => {
+    if (state.screen !== 'analyzing') return;
     state.result = buildResult(state.profile, state.answers);
     state.screen = 'result';
     render();
