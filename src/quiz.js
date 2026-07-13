@@ -32,6 +32,26 @@ export const mbtiTypes = [
   ['esfp', 'ESFP', '外向 · 实感 · 情感 · 感知']
 ].map(([id, name, dimensions]) => ({ id, name, dimensions }));
 
+const relationshipMapClue = (category) =>
+  `关系地图线索：在「${category}」这件事里，什么会让你感觉彼此正在好好相处？`;
+
+const quizKeyMoments = {
+  12: {
+    3: '关键分岔：这组选择正在帮你看清，你需要怎样被认真回应。',
+    7: '关系地图开始成形：你对靠近与边界的偏好正在变得清楚。',
+    10: '最后一段线索：接下来会整理你在修复关系时最看重的部分。'
+  },
+  20: {
+    5: '关键分岔：这组选择正在帮你看清，你需要怎样被认真回应。',
+    11: '关系地图开始成形：你对靠近与边界的偏好正在变得清楚。',
+    16: '最后一段线索：接下来会整理你在修复关系时最看重的部分。'
+  }
+};
+
+export function getKeyMoment(total, index) {
+  return quizKeyMoments[total]?.[index] ?? null;
+}
+
 const questions = [
   {
     category: '发生误会',
@@ -456,6 +476,7 @@ const questions = [
 ].map((question, index) => ({
   id: index + 1,
   ...question,
+  clue: relationshipMapClue(question.category),
   choices: question.choices.map(([label, value]) => ({ label, value }))
 }));
 

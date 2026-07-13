@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getQuestions, mbtiTypes, zodiacs } from './quiz.js';
+import { getKeyMoment, getQuestions, mbtiTypes, zodiacs } from './quiz.js';
 import { analyzeRelationshipMap, buildResult, scoreAnswers } from './match.js';
 
 describe('quiz reference data', () => {
@@ -13,6 +13,19 @@ describe('quiz reference data', () => {
     expect(lowRandomSet.map((question) => question.id)).not.toEqual(
       highRandomSet.map((question) => question.id)
     );
+  });
+
+  it('attaches a relationship-map clue to every question', () => {
+    const questions = getQuestions(20, () => 0);
+
+    expect(questions.every((question) => question.clue)).toBe(true);
+    expect(questions.every((question) => question.clue.includes(question.category))).toBe(true);
+  });
+
+  it('marks meaningful progress moments for both quiz lengths', () => {
+    expect(getKeyMoment(12, 3)).toContain('关键分岔');
+    expect(getKeyMoment(12, 4)).toBeNull();
+    expect(getKeyMoment(20, 11)).toContain('关系地图');
   });
 
   it('uses established zodiac date ranges and all MBTI types', () => {
@@ -83,6 +96,10 @@ describe('relationship-preference scoring', () => {
     expect(map.tension).toMatchObject({ id: 'reassurance-independent' });
     expect(map.repairPrompt).toContain('需要');
     expect(map.tension.detail).not.toContain('不适合');
+  });
+
+  it('does not infer a tension from an unanswered secondary need', () => {
+    expect(analyzeRelationshipMap(Array(12).fill('direct')).tension).toBeNull();
   });
 
   it('unlocks a practice only on the 20-question path', () => {

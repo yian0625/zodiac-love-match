@@ -1,5 +1,5 @@
 import './style.css';
-import { getQuestions, mbtiTypes, zodiacs } from './quiz.js';
+import { getKeyMoment, getQuestions, mbtiTypes, zodiacs } from './quiz.js';
 import { buildResult } from './match.js';
 
 const app = document.querySelector('#app');
@@ -24,6 +24,36 @@ const screenLayout = (content, screen) => `
     ${content}
   </main>
 `;
+
+const preferenceLabels = {
+  direct: '坦诚沟通',
+  reassurance: '情绪回应',
+  independent: '独立空间',
+  reliable: '稳定行动'
+};
+
+function renderProgressRail(total, current) {
+  const items = Array.from({ length: total }, (_, index) => {
+    const classes = [
+      index < current ? 'is-complete' : '',
+      index === current ? 'is-current' : ''
+    ].filter(Boolean).join(' ');
+    return `<li class="${classes}"><span class="sr-only">第 ${index + 1} 题</span></li>`;
+  }).join('');
+
+  return `<ol class="progress-rail" style="--count:${total}" aria-label="答题进度">${items}</ol>`;
+}
+
+function renderMapClue(question, index, total) {
+  const keyMoment = getKeyMoment(total, index);
+  return `
+    <aside class="map-clue">
+      <span>关系地图线索 ${index + 1}</span>
+      <p>${question.clue}</p>
+      ${keyMoment ? `<p class="key-moment">${keyMoment}</p>` : ''}
+    </aside>
+  `;
+}
 
 function renderPicker({ field, label, helper, items, formatter }) {
   const selected = items.find((item) => item.id === state.profile[field]);
@@ -83,14 +113,20 @@ function renderWelcome() {
     <section class="welcome-screen">
       <div class="hero-image" aria-hidden="true"></div>
       <div class="hero-copy">
-        <p class="eyebrow">RELATIONSHIP REFLECTION</p>
-        <h1>找到让你感到<br class="desktop-break" />舒服的相处方式。</h1>
-        <p class="hero-description">从真实恋爱场景出发，梳理你在关系中最在意的互动需求。</p>
-        <button class="primary-button" type="button" data-action="to-profile">开始探索 <span aria-hidden="true">→</span></button>
+        <p class="eyebrow">YOUR RELATIONSHIP MAP</p>
+        <h1>为什么有人很好，<br class="desktop-break" />相处却总觉得累？</h1>
+        <p class="hero-description">从真实恋爱场景出发，找到你在亲密关系里最需要被怎样对待。</p>
+        <button class="primary-button" type="button" data-action="to-profile">绘制我的关系地图 <span aria-hidden="true">→</span></button>
+        <ul class="unlock-list" aria-label="完成后将解锁的内容">
+          <li>核心需要</li>
+          <li>冲突节奏</li>
+          <li>沟通提示</li>
+          <li>相处参考</li>
+        </ul>
       </div>
       <aside class="hero-fact" aria-label="使用说明">
-        <strong>这不是恋爱预测</strong>
-        <p>星座与 MBTI 用于自我探索。结果不替代真实沟通与相互尊重。</p>
+        <strong>不是给你贴标签</strong>
+        <p>星座与 MBTI 只是参考镜头。真正重要的是，你们愿不愿意把需要说清楚。</p>
       </aside>
     </section>
   `, 'welcome');
@@ -144,12 +180,14 @@ function renderLength() {
           <span class="option-kicker">轻量版</span>
           <strong>12 题</strong>
           <span>约 3 分钟，聚焦你在关系里的核心需要。</span>
+          <span class="option-unlock">解锁：核心需要 · 相处节奏 · 互动参考</span>
           <span class="option-arrow" aria-hidden="true">→</span>
         </button>
         <button class="length-option deep" type="button" data-action="choose-length" data-count="20">
-          <span class="option-kicker">深入版</span>
+          <span class="option-kicker">完整地图</span>
           <strong>20 题</strong>
           <span>约 5 分钟，延展到边界、修复与共同成长。</span>
+          <span class="option-unlock">额外解锁：关系拉扯 · 修复提示 · 一周练习</span>
           <span class="option-arrow" aria-hidden="true">→</span>
         </button>
       </div>
@@ -170,7 +208,9 @@ function renderQuiz() {
         <p><span>恋爱场景</span>${question.category}</p>
         <span>第 ${state.questionIndex + 1} 题，共 ${questions.length} 题</span>
       </div>
+      ${renderProgressRail(questions.length, state.questionIndex)}
       <div class="question-area">
+        ${renderMapClue(question, state.questionIndex, questions.length)}
         <h1>${question.prompt}</h1>
         <div class="choice-list" role="radiogroup" aria-label="${question.prompt}">
           ${question.choices.map((choice, index) => `
@@ -193,9 +233,13 @@ function renderAnalyzing() {
   return screenLayout(`
     <section class="analysis-screen" aria-live="polite">
       <p class="eyebrow">YOUR RELATIONSHIP MAP</p>
-      <h1>正在整理你的<br />相处偏好。</h1>
-      <div class="analysis-orbits" aria-hidden="true"><i></i><i></i><i></i></div>
-      <p>把你刚才的真实选择，转成更清晰的关系语言。</p>
+      <h1>正在绘制你的<br />相处地图。</h1>
+      <ol class="analysis-steps">
+        <li class="is-done">收集你的场景选择</li>
+        <li class="is-active">整理四种关系需要</li>
+        <li>准备你的相处建议</li>
+      </ol>
+      <p>每一种选择都只是你的一个线索，不是给你贴标签。</p>
     </section>
   `, 'analyzing');
 }
@@ -203,14 +247,66 @@ function renderAnalyzing() {
 function resultCards(items, kind) {
   return items.map((item, index) => `
     <article class="match-item ${index === 0 ? 'is-top' : ''}">
-      <span class="match-rank">${index + 1}</span>
+      <span class="match-rank">${String(index + 1).padStart(2, '0')}</span>
       <div>
         <p>${kind}</p>
         <h3>${item.name}</h3>
-        <span>${item.reason}</span>
+        <dl>
+          <div><dt>容易靠近</dt><dd>${item.easy}</dd></div>
+          <div><dt>早点聊聊</dt><dd>${item.watchFor}</dd></div>
+          <div><dt>试试看</dt><dd>${item.tryThis}</dd></div>
+        </dl>
       </div>
     </article>
   `).join('');
+}
+
+function renderRelationshipMap(result) {
+  const axes = Object.entries(result.weights)
+    .map(([preference, weight]) => `
+      <span class="map-axis map-axis-${preference}" style="--weight:${weight}">
+        <b>${weight}%</b>
+        <small>${preferenceLabels[preference]}</small>
+      </span>
+    `).join('');
+  const summary = Object.entries(result.weights)
+    .map(([preference, weight]) => `<li><span>${preferenceLabels[preference]}</span><strong>${weight}%</strong></li>`)
+    .join('');
+
+  return `
+    <section class="relationship-map" aria-labelledby="map-title">
+      <div class="map-heading">
+        <p>你的关系地图</p>
+        <h2 id="map-title">四种需要的相对位置</h2>
+      </div>
+      <div class="map-visual" aria-hidden="true">
+        <span class="map-center">关系<br />地图</span>
+        ${axes}
+      </div>
+      <ul class="map-summary">${summary}</ul>
+    </section>
+  `;
+}
+
+function renderPractice(result) {
+  if (!result.practice) {
+    return `
+      <section class="full-map-invite">
+        <strong>想看见更多关系细节？</strong>
+        <p>20 题完整地图会解锁冲突拉扯、修复提示和一周练习。</p>
+        <button class="text-button" type="button" data-action="to-length">探索完整地图</button>
+      </section>
+    `;
+  }
+
+  return `
+    <section class="practice-card">
+      <p>完整地图 · 本周练习</p>
+      <h2>${result.practice.title}</h2>
+      <p>${result.practice.conversation}</p>
+      <p>${result.practice.action}</p>
+    </section>
+  `;
 }
 
 function renderResult() {
@@ -218,7 +314,7 @@ function renderResult() {
   const profileZodiac = zodiacs.find((sign) => sign.id === state.profile.zodiac);
   const profileMbti = mbtiTypes.find((type) => type.id === state.profile.mbti);
   const preferenceTags = result.preferences.slice(0, 3)
-    .map((preference) => `<span class="preference-tag">${({ direct: '坦诚沟通', reassurance: '情绪回应', independent: '独立空间', reliable: '稳定行动' })[preference]}</span>`)
+    .map((preference) => `<span class="preference-tag">${preferenceLabels[preference]}</span>`)
     .join('');
 
   return screenLayout(`
@@ -236,10 +332,46 @@ function renderResult() {
         <p>${profileZodiac.dates} / ${profileMbti.dimensions}</p>
       </aside>
 
+      ${renderRelationshipMap(result)}
+
+      <section class="insight-section profile-pattern">
+        <p>你的地图状态</p>
+        <h2>${result.pattern.name}</h2>
+        <p>${result.pattern.detail}</p>
+        ${result.tension ? `
+          <div class="tension-note">
+            <strong>${result.tension.name}</strong>
+            <p>${result.tension.detail}</p>
+          </div>
+        ` : ''}
+      </section>
+
+      <section class="insight-section interaction-manual">
+        <p>你的相处说明书</p>
+        <h2>怎样会让你感觉被好好对待？</h2>
+        <dl>
+          <div><dt>靠近感来自</dt><dd>${result.manual.close}</dd></div>
+          <div><dt>容易卡住时</dt><dd>${result.manual.friction}</dd></div>
+          <div><dt>可以这样开口</dt><dd>“${result.manual.request}”</dd></div>
+        </dl>
+      </section>
+
+      <section class="repair-sequence">
+        <p>关系修复提示</p>
+        <h2>先说需要，再约下一步</h2>
+        <ol>
+          <li>停一下，先辨认自己正在在意什么。</li>
+          <li>用具体的需要代替指责。</li>
+          <li>${result.repairPrompt}</li>
+        </ol>
+      </section>
+
+      ${renderPractice(result)}
+
       <section class="matches-section">
         <header>
-          <h2>更可能让你感到舒服的互动参考</h2>
-          <p>按你的场景题偏好排序，而非判定关系好坏。</p>
+          <h2>相处参考镜头</h2>
+          <p>按你的场景题偏好整理，而非判定关系好坏。</p>
         </header>
         <div class="match-columns">
           <div class="match-group">

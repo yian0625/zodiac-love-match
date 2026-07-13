@@ -183,7 +183,9 @@ function classifyMap(scores, preferences) {
   };
 }
 
-function findTension(preferences) {
+function findTension(scores, preferences) {
+  if (scores[preferences[1]] === 0) return null;
+
   const pair = [preferences[0], preferences[1]].sort().join('-');
   const tensionId = {
     'independent-reassurance': 'reassurance-independent',
@@ -244,7 +246,7 @@ export function analyzeRelationshipMap(answers) {
     weights: weightScores(scores),
     preferences,
     pattern: classifyMap(scores, preferences),
-    tension: findTension(preferences),
+    tension: findTension(scores, preferences),
     manual: {
       close: primary.close,
       friction: primary.friction,
