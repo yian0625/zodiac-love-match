@@ -29,12 +29,6 @@ function renderPicker({ field, label, helper, items, formatter }) {
   const selected = items.find((item) => item.id === state.profile[field]);
   const isOpen = state.openPicker === field;
   const menuId = `${field}-options`;
-  const optionRows = items.map((item) => `
-    <button class="select-option ${item.id === state.profile[field] ? 'is-selected' : ''}" type="button" aria-pressed="${item.id === state.profile[field]}" data-action="pick-option" data-field="${field}" data-value="${item.id}">
-      <strong>${item.name}</strong>
-      <span>${formatter(item)}</span>
-    </button>
-  `).join('');
 
   return `
     <div class="field-group picker-field">
@@ -43,21 +37,44 @@ function renderPicker({ field, label, helper, items, formatter }) {
         <span id="${field}-value">${selected ? `${selected.name} - ${formatter(selected)}` : `请选择${label.replace('你的', '')}`}</span>
         <span class="select-chevron" aria-hidden="true"></span>
       </button>
-      ${isOpen ? `
-        <button class="picker-scrim" type="button" data-action="close-picker" aria-label="关闭${label}选择器"></button>
-        <section class="select-sheet" id="${menuId}" role="dialog" aria-modal="true" aria-labelledby="${field}-sheet-title">
-          <header class="select-sheet-header">
-            <div>
-              <p>选择资料</p>
-              <h2 id="${field}-sheet-title">${label}</h2>
-            </div>
-            <button class="sheet-close" type="button" data-action="close-picker">完成</button>
-          </header>
-          <div class="select-options" role="group" aria-label="${label}选项">${optionRows}</div>
-        </section>
-      ` : ''}
       <small>${helper}</small>
     </div>
+  `;
+}
+
+function renderPickerSheet(field) {
+  const config = field === 'zodiac'
+    ? {
+        field: 'zodiac',
+        label: '你的星座',
+        items: zodiacs,
+        formatter: (sign) => `${sign.dates} / ${sign.element}`
+      }
+    : {
+        field: 'mbti',
+        label: '你的 MBTI',
+        items: mbtiTypes,
+        formatter: (type) => type.dimensions
+      };
+  const optionRows = config.items.map((item) => `
+    <button class="select-option ${item.id === state.profile[config.field] ? 'is-selected' : ''}" type="button" aria-pressed="${item.id === state.profile[config.field]}" data-action="pick-option" data-field="${config.field}" data-value="${item.id}">
+      <strong>${item.name}</strong>
+      <span>${config.formatter(item)}</span>
+    </button>
+  `).join('');
+
+  return `
+    <button class="picker-scrim" type="button" data-action="close-picker" aria-label="关闭${config.label}选择器"></button>
+    <section class="select-sheet" id="${config.field}-options" role="dialog" aria-modal="true" aria-labelledby="${config.field}-sheet-title">
+      <header class="select-sheet-header">
+        <div>
+          <p>选择资料</p>
+          <h2 id="${config.field}-sheet-title">${config.label}</h2>
+        </div>
+        <button class="sheet-close" type="button" data-action="close-picker">完成</button>
+      </header>
+      <div class="select-options" role="group" aria-label="${config.label}选项">${optionRows}</div>
+    </section>
   `;
 }
 
@@ -109,6 +126,7 @@ function renderProfile() {
         <button class="primary-button" type="button" data-action="to-length">继续 <span aria-hidden="true">→</span></button>
       </form>
     </section>
+    ${state.openPicker ? renderPickerSheet(state.openPicker) : ''}
   `, 'profile');
 }
 
